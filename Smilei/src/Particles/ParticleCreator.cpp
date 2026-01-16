@@ -858,6 +858,24 @@ void ParticleCreator::createMomentum( std::string momentum_initialization,
                     particles->momentum( 2, p ) *= t2;
                 }
             }
+            
+            // redone in the cod  latest code
+            // 02/14/22
+            // this part is added to project velocity from local (perp, para) to (x, y)
+            double Re_cwr = 583.0789299377868; //Earth radius in units of c/wr
+            double Lmin = 0.5588391918010813; //min L number (units of Re)
+            double zmax = 0.2195243103942331; //max z (units of Re)
+            double pi_const = 3.141592653589793;
+            double p_perp, p_para;
+            for( unsigned int p=iPart; p<iPart+nPart; p++ ) {
+                double x1 = particles->position(0,p)/Re_cwr + Lmin;
+                double y1 = particles->position(1,p)/Re_cwr - zmax;
+                double rot_ang = atan2(x1*x1-y1*y1, -2*x1*y1) - pi_const/2;
+                p_perp = particles->momentum(0,p);
+                p_para = particles->momentum(1,p);
+                particles->momentum(0,p) = p_perp*cos(rot_ang) - p_para*sin(rot_ang);
+                particles->momentum(1,p) = p_perp*sin(rot_ang) + p_para*cos(rot_ang);
+            }
 
             // Rectangular distribution
         } else if( momentum_initialization == "rectangular" ) {

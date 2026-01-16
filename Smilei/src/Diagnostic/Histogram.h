@@ -913,15 +913,34 @@ class Histogram_pressure_xx : public Histogram
         unsigned int npart = s->getNbrOfParticles();
         // Matter Particles
         if( s->mass_ > 0 ) {
+         // 11/21/23: convert (vx,by) to (vper, vpar) // redone in latest code december 2025
+            double Re_cwr = 583.0789299377868; //Earth radius in units of c/wr
+            double Lmin = 0.5588391918010813; //min L number (units of Re)
+            double zmax = 0.2195243103942331; //max z (units of Re)
+            double pi_const = 3.141592653589793;
+            
             for( unsigned int ipart = 0 ; ipart < npart ; ipart++ ) {
                 if( index[ipart]<0 ) {
                     continue;
                 }
+                double x1 = s->particles->Position[0][ipart]/Re_cwr + Lmin;
+                double y1 = s->particles->Position[1][ipart]/Re_cwr - zmax;
+                double rot_ang = atan2(x1*x1-y1*y1, -2*x1*y1)-pi_const/2;
+                double PB_px = s->particles->Momentum[0][ipart];
+                double PB_py = s->particles->Momentum[1][ipart];
+                double PB_pz = s->particles->Momentum[2][ipart];
+                double PB_gamma = sqrt( 1. + pow(PB_px, 2) + pow(PB_py, 2) + pow(PB_pz, 2) );
+                double PB_vx = PB_px / PB_gamma;
+                double PB_vy = PB_py / PB_gamma;
+                double PB_vper = PB_vx * cos(rot_ang) + PB_vy * sin(rot_ang);
+
+//                array[ipart] = s->mass_ * s->particles->Weight[ipart]
+//                               * ( s->particles->Momentum[0][ipart] * s->particles->Momentum[0][ipart] )
+//                               / sqrt( 1. + s->particles->Momentum[0][ipart] * s->particles->Momentum[0][ipart]
+//                                     + s->particles->Momentum[1][ipart] * s->particles->Momentum[1][ipart]
+//                                     + s->particles->Momentum[2][ipart] * s->particles->Momentum[2][ipart] );
                 array[ipart] = s->mass_ * s->particles->Weight[ipart]
-                               * ( s->particles->Momentum[0][ipart] * s->particles->Momentum[0][ipart] )
-                               / sqrt( 1. + s->particles->Momentum[0][ipart] * s->particles->Momentum[0][ipart]
-                                     + s->particles->Momentum[1][ipart] * s->particles->Momentum[1][ipart]
-                                     + s->particles->Momentum[2][ipart] * s->particles->Momentum[2][ipart] );
+                               * pow( PB_vper, 2 ) * PB_gamma;
             }
         }
         // Photons
@@ -947,15 +966,32 @@ class Histogram_pressure_yy : public Histogram
         unsigned int npart = s->getNbrOfParticles();
         // Matter Particles
         if( s->mass_ > 0 ) {
+        // 11/21/23: convert (vx,by) to (vper, vpar) // redone in latest code december 2025
+            double Re_cwr = 583.0789299377868; //Earth radius in units of c/wr
+            double Lmin = 0.5588391918010813; //min L number (units of Re)
+            double zmax = 0.2195243103942331; //max z (units of Re)
+            double pi_const = 3.141592653589793;
             for( unsigned int ipart = 0 ; ipart < npart ; ipart++ ) {
                 if( index[ipart]<0 ) {
                     continue;
                 }
+                double x1 = s->particles->Position[0][ipart]/Re_cwr + Lmin;
+                double y1 = s->particles->Position[1][ipart]/Re_cwr - zmax;
+                double rot_ang = atan2(x1*x1-y1*y1, -2*x1*y1)-pi_const/2;
+                double PB_px = s->particles->Momentum[0][ipart];
+                double PB_py = s->particles->Momentum[1][ipart];
+                double PB_pz = s->particles->Momentum[2][ipart];
+                double PB_gamma = sqrt( 1. + pow(PB_px, 2) + pow(PB_py, 2) + pow(PB_pz, 2) );
+                double PB_vx = PB_px / PB_gamma;
+                double PB_vy = PB_py / PB_gamma;
+                double PB_vpar = - PB_vx * sin(rot_ang) + PB_vy * cos(rot_ang);                
+//                array[ipart] = s->mass_ * s->particles->Weight[ipart]
+//                               * ( s->particles->Momentum[1][ipart] * s->particles->Momentum[1][ipart] )
+//                               / sqrt( 1. + s->particles->Momentum[0][ipart] * s->particles->Momentum[0][ipart]
+//                                     + s->particles->Momentum[1][ipart] * s->particles->Momentum[1][ipart]
+//                                     + s->particles->Momentum[2][ipart] * s->particles->Momentum[2][ipart] );
                 array[ipart] = s->mass_ * s->particles->Weight[ipart]
-                               * ( s->particles->Momentum[1][ipart] * s->particles->Momentum[1][ipart] )
-                               / sqrt( 1. + s->particles->Momentum[0][ipart] * s->particles->Momentum[0][ipart]
-                                     + s->particles->Momentum[1][ipart] * s->particles->Momentum[1][ipart]
-                                     + s->particles->Momentum[2][ipart] * s->particles->Momentum[2][ipart] );
+                               * pow( PB_vpar, 2 ) * PB_gamma;
             }
         }
         // Photons

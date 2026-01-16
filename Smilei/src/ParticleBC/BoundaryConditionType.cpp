@@ -85,12 +85,18 @@ void internal_sup_AM( Species *species, int imin, int imax, int /*direction*/, d
         }
     }
 }
+// redone with latest code December 2025
+//modifications to the following two functions try to reverse all 3 velocity components upon reflection;
+//the purpose is to conserve particles' pitch angles in chorus simulations
 
 void reflect_particle_inf( Species *species, int imin, int imax, int direction, double limit_inf, double /*dt*/, std::vector<double> &/*invgf*/, Random * /*rand*/, double &energy_change )
 {
     energy_change = 0.;     // no energy loss during reflection
     double* position = species->particles->getPtrPosition(direction);
-    double* momentum = species->particles->getPtrMomentum(direction);
+    //double* momentum = species->particles->getPtrMomentum(direction);
+    double* momentum0 = species->particles->getPtrMomentum(0);
+    double* momentum1 = species->particles->getPtrMomentum(1);
+    double* momentum2 = species->particles->getPtrMomentum(2);
 #ifdef SMILEI_ACCELERATOR_GPU_OACC
     #pragma acc parallel deviceptr(position,momentum)
     #pragma acc loop gang worker vector
@@ -101,7 +107,10 @@ void reflect_particle_inf( Species *species, int imin, int imax, int direction, 
     for( int ipart=imin ; ipart<imax ; ipart++ ) {
         if( position[ ipart ] < limit_inf ) {
             position[ ipart ] = 2.*limit_inf - position[ ipart ];
-            momentum[ ipart ] = -momentum[ ipart ];
+          //  momentum[ ipart ] = -momentum[ ipart ];
+            momentum0[ ipart ] = -momentum0[ ipart ];
+            momentum1[ ipart ] = -momentum1[ ipart ];
+            momentum2[ ipart ] = -momentum2[ ipart ];
         }
     }
 }
@@ -110,7 +119,10 @@ void reflect_particle_sup( Species *species, int imin, int imax, int direction, 
 {
     energy_change = 0.;     // no energy loss during reflection
     double* position = species->particles->getPtrPosition(direction);
-    double* momentum = species->particles->getPtrMomentum(direction);
+   // double* momentum = species->particles->getPtrMomentum(direction);
+    double* momentum0 = species->particles->getPtrMomentum(0);
+    double* momentum1 = species->particles->getPtrMomentum(1);
+    double* momentum2 = species->particles->getPtrMomentum(2);
 #ifdef SMILEI_ACCELERATOR_GPU_OACC
     #pragma acc parallel deviceptr(position,momentum)
     #pragma acc loop gang worker vector
@@ -121,8 +133,11 @@ void reflect_particle_sup( Species *species, int imin, int imax, int direction, 
     for (int ipart=imin ; ipart<imax ; ipart++ ) {
         if ( position[ ipart ] >= limit_sup) {
             // The upper boundary does not belong to the domain so the reflection is done just before it.
-            position[ ipart ] = 2*std::nextafter(limit_sup, 0) - position[ ipart ];
-            momentum[ ipart ] = -momentum[ ipart ];
+            position[ ipart ] = 2*std::nextafter(limit_sup, 0) - position[ ipart ];  // this line new in new code
+           // momentum[ ipart ] = -momentum[ ipart ]; 
+            momentum0[ ipart ] = -momentum0[ ipart ];
+            momentum1[ ipart ] = -momentum1[ ipart ];
+            momentum2[ ipart ] = -momentum2[ ipart ];
         }
     }
 }
